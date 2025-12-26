@@ -11,7 +11,7 @@ APPIMAGE_NAME = NCALayer-x86_64.AppImage
 APPDIR = NCALayer.AppDir
 APPIMAGETOOL_URL = https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
 
-.PHONY: all download verify clean appimage extract extract-jar build-appimage clean-appimage help clean-all install-certs pkg-arch pkg-deb pkg-rpm pkg-rpm-fedora clean-pkg
+.PHONY: all download verify clean appimage extract extract-jar build-appimage clean-appimage help clean-build clean-all install-certs pkg-arch pkg-deb pkg-rpm pkg-rpm-fedora clean-pkg
 
 all: download verify
 
@@ -29,6 +29,7 @@ help:
 	@echo "  install-certs    - Install NCA certificates to browser databases"
 	@echo "  clean            - Remove downloaded archive"
 	@echo "  clean-appimage   - Remove all AppImage build artifacts"
+	@echo "  clean-build      - Remove build artifacts (keeps ncalayer.zip)"
 	@echo "  clean-all        - Remove everything (archive + AppImage)"
 	@echo "  help             - Show this help message"
 	@echo ""
@@ -194,6 +195,10 @@ install-certs.sh: extract install-certs.sh.template
 # Install NCA certificates to system browsers
 install-certs: install-certs.sh
 	@./install-certs.sh
+
+# Clean build artifacts but preserve downloaded archive
+clean-build: clean-appimage
+	@echo "Build artifacts cleaned (ncalayer.zip preserved)."
 
 # Clean everything
 clean-all: clean clean-appimage
