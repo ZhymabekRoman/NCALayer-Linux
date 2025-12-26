@@ -135,7 +135,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip
+          sudo apt-get install -y wget unzip libfuse2
 
       - name: Checkout code
         uses: actions/checkout@v4
