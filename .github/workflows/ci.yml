@@ -15,13 +15,52 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure DNS for reliable resolution
+        run: |
+          echo "Configuring DNS servers..."
+          echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
+          echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf > /dev/null
+          echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf > /dev/null
+          cat /etc/resolv.conf
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y unzip wget curl
+          sudo apt-get install -y unzip wget curl aria2
 
-      - name: Download ncalayer.zip
-        run: make download
+      - name: Cache ncalayer.zip
+        id: cache-ncalayer
+        uses: actions/cache@v4
+        with:
+          path: ncalayer.zip
+          key: ncalayer-${{ hashFiles('Makefile') }}-fc44f518042ff8daf6087cd6dcc667cb
+
+      - name: Download ncalayer.zip with retry
+        if: steps.cache-ncalayer.outputs.cache-hit != 'true'
+        run: |
+          echo "Downloading ncalayer.zip..."
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS..."
+
+            if make download; then
+              echo "Download successful!"
+              break
+            else
+              echo "Download failed on attempt $ATTEMPT"
+
+              if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                echo "All download attempts failed!"
+                exit 1
+              fi
+
+              echo "Waiting 15 seconds before retry..."
+              sleep 15
+              ATTEMPT=$((ATTEMPT + 1))
+            fi
+          done
 
       - name: Verify checksums
         run: make verify

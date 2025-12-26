@@ -45,7 +45,9 @@ help:
 download: ncalayer.zip
 
 ncalayer.zip:
-	@if command -v aria2c >/dev/null 2>&1; then \
+	@if [ -f ncalayer.zip ]; then \
+		echo "ncalayer.zip already exists, skipping download"; \
+	elif command -v aria2c >/dev/null 2>&1; then \
 		echo "Using aria2c to download"; \
 		aria2c -x 16 -s 16 $(DOWNLOAD_URL); \
 	elif command -v curl >/dev/null 2>&1; then \

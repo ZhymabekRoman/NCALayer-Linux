@@ -7,7 +7,75 @@ on:
   workflow_dispatch:
 
 jobs:
+  download-and-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure DNS for reliable resolution
+        run: |
+          echo "Configuring DNS servers..."
+          echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
+          echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf > /dev/null
+          echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf > /dev/null
+          cat /etc/resolv.conf
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget curl aria2
+
+      - name: Cache ncalayer.zip
+        id: cache-ncalayer
+        uses: actions/cache@v4
+        with:
+          path: ncalayer.zip
+          key: ncalayer-${{ hashFiles('Makefile') }}-fc44f518042ff8daf6087cd6dcc667cb
+
+      - name: Download ncalayer.zip with retry
+        if: steps.cache-ncalayer.outputs.cache-hit != 'true'
+        run: |
+          echo "Downloading ncalayer.zip..."
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS..."
+
+            if make download; then
+              echo "Download successful!"
+              break
+            else
+              echo "Download failed on attempt $ATTEMPT"
+
+              if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                echo "All download attempts failed!"
+                exit 1
+              fi
+
+              echo "Waiting 15 seconds before retry..."
+              sleep 15
+              ATTEMPT=$((ATTEMPT + 1))
+            fi
+          done
+
+      - name: Verify ncalayer.zip checksum
+        run: |
+          echo "Verifying checksums..."
+          make verify
+
+      - name: Upload ncalayer.zip as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ncalayer-source
+          path: ncalayer.zip
+          retention-days: 90
+
   build-arch:
+    needs: download-and-cache
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
@@ -16,6 +84,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download ncalayer.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ncalayer-source
 
       - name: Update system and install dependencies
         run: |
@@ -64,17 +137,23 @@ jobs:
           path: "*.pkg.tar.zst"
 
   build-deb:
+    needs: download-and-cache
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download ncalayer.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ncalayer-source
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential debhelper devscripts wget unzip openjdk-8-jre
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Update changelog version
         run: |
@@ -101,18 +180,24 @@ jobs:
           path: "*.deb"
 
   build-rpm-fedora:
+    needs: download-and-cache
     runs-on: ubuntu-latest
     container:
       image: fedora:latest
     timeout-minutes: 15
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download ncalayer.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ncalayer-source
+
       - name: Install dependencies
         run: |
           dnf install -y rpm-build rpmdevtools make wget unzip git
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Setup RPM build tree
         run: |
@@ -148,18 +233,24 @@ jobs:
           path: "*.rpm"
 
   build-rpm-rhel:
+    needs: download-and-cache
     runs-on: ubuntu-latest
     container:
       image: rockylinux:8
     timeout-minutes: 15
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download ncalayer.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ncalayer-source
+
       - name: Install dependencies
         run: |
           dnf install -y rpm-build rpmdevtools make wget unzip java-1.8.0-openjdk git
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Setup RPM build tree
         run: |
@@ -195,17 +286,23 @@ jobs:
           path: "*.rpm"
 
   build-appimage:
+    needs: download-and-cache
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download ncalayer.zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ncalayer-source
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip libfuse2
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Build AppImage
         run: |
