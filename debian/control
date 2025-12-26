@@ -1,0 +1,23 @@
+Source: ncalayer
+Section: net
+Priority: optional
+Maintainer: ZhymabekRoman <robanokssamit@yandex.kz>
+Build-Depends: debhelper-compat (= 13), wget, unzip
+Standards-Version: 4.6.0
+Homepage: https://github.com/ZhymabekRoman/NCALayer-Linux
+Vcs-Git: https://github.com/ZhymabekRoman/NCALayer-Linux.git
+Vcs-Browser: https://github.com/ZhymabekRoman/NCALayer-Linux
+
+Package: ncalayer
+Architecture: amd64
+Depends: ${misc:Depends}, openjdk-8-jre | java8-runtime, libnss3-tools
+Recommends: pcscd, libpcsclite1
+Description: NCALayer digital signature application
+ NCALayer is the official digital signature application for Kazakhstan's
+ National Certification Authority (NCA) PKI infrastructure.
+ .
+ This package provides the core application for working with electronic
+ digital signatures, smart cards, and NCA certificates.
+ .
+ After installation, run 'ncalayer-install-certs' to install NCA
+ certificates to your browser databases.

@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip wget curl
+
+      - name: Download ncalayer.zip
+        run: make download
+
+      - name: Verify checksums
+        run: make verify
+
+      - name: Extract archive
+        run: make extract
+
+      - name: Extract JAR
+        run: make extract-jar
+
+      - name: Verify JAR extraction
+        run: |
+          if [ ! -f ncalayer.jar ]; then
+            echo "Error: ncalayer.jar not found"
+            exit 1
+          fi
+          echo "JAR size: $(du -h ncalayer.jar | cut -f1)"
+          file ncalayer.jar
+
+      - name: Generate install-certs.sh
+        run: make install-certs.sh
+
+      - name: Verify install-certs.sh
+        run: |
+          if [ ! -x install-certs.sh ]; then
+            echo "Error: install-certs.sh not executable"
+            exit 1
+          fi
+          echo "install-certs.sh size: $(du -h install-certs.sh | cut -f1)"
+          echo "install-certs.sh generated successfully"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ncalayer-validated
+          path: |
+            ncalayer.jar
+            install-certs.sh
+            additions/

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.4
+Name=NCALayer
+Name[ru]=NCALayer
+GenericName=NCALayer
+GenericName[ru]=NCALayer
+Comment=NCALayer application for digital signature
+Comment[ru]=Приложение для работы с ЭЦП
+Icon=ncalayer
+Type=Application
+Exec=ncalayer
+Terminal=false
+Categories=Network;RemoteAccess;

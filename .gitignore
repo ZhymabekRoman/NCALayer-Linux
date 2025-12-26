@@ -1,0 +1,31 @@
+# Downloaded archive
+ncalayer.zip
+
+# Extracted files
+ncalayer.sh
+ncalayer.jar
+additions/
+Инструкция*.txt
+
+# Build artifacts
+NCALayer.AppDir/
+NCALayer-*.AppImage
+appimagetool
+install-certs.sh
+
+# Distribution package build artifacts
+*.pkg.tar.zst
+*.deb
+*.rpm
+*.buildinfo
+*.changes
+debian/.debhelper/
+debian/ncalayer/
+debian/files
+debian/*.debhelper*
+debian/*.substvars
+
+# Keep templates (negation patterns)
+!AppRun.template
+!ncalayer.desktop.template
+!install-certs.sh.template

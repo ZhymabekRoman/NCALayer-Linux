@@ -1,0 +1,228 @@
+name: Package Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update system and install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel git sudo wget unzip jre8-openjdk
+
+      - name: Create build user
+        run: |
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder .
+
+      - name: Build package
+        run: |
+          # Create source tarball for makepkg
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.0.0")
+          PKGNAME=ncalayer
+          mkdir -p /tmp/${PKGNAME}-${VERSION}
+          cp -r . /tmp/${PKGNAME}-${VERSION}/
+          rm -rf /tmp/${PKGNAME}-${VERSION}/.git
+          tar czf ${PKGNAME}-${VERSION}.tar.gz -C /tmp ${PKGNAME}-${VERSION}
+          chown builder:builder ${PKGNAME}-${VERSION}.tar.gz
+
+          # Update PKGBUILD version
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" pkg/PKGBUILD
+          sed -i "s|source=(.*)|source=(\"${PKGNAME}-${VERSION}.tar.gz\")|" pkg/PKGBUILD
+
+          # Copy PKGBUILD and .install file to root for makepkg
+          cp pkg/PKGBUILD .
+          cp pkg/ncalayer.install .
+          chown -R builder:builder .
+
+          # Build as non-root user
+          su - builder -c "cd $GITHUB_WORKSPACE && makepkg -cf --noconfirm"
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: "*.pkg.tar.zst"
+
+  build-deb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential debhelper devscripts wget unzip openjdk-8-jre
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update changelog version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.0.0")
+          DEBFULLNAME="GitHub Actions" DEBEMAIL="actions@github.com" dch -v "${VERSION}-1" -D unstable "Automated release ${VERSION}"
+          DEBFULLNAME="GitHub Actions" DEBEMAIL="actions@github.com" dch -r ""
+
+      - name: Build Debian package
+        run: |
+          dpkg-buildpackage -us -uc -b
+          mv ../*.deb .
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: "*.deb"
+
+  build-rpm:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y rpm-build rpmdevtools make wget unzip java-1.8.0-openjdk git
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup RPM build tree
+        run: |
+          rpmdev-setuptree
+          mkdir -p ~/rpmbuild/SOURCES
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.0.0")
+
+          # Update spec version
+          sed -i "s/^Version:.*/Version:        ${VERSION}/" pkg/ncalayer.spec
+
+          # Create source tarball
+          tar czf ~/rpmbuild/SOURCES/ncalayer-${VERSION}.tar.gz \
+            --transform "s,^,ncalayer-${VERSION}/," \
+            --exclude=.git \
+            .
+
+      - name: Build RPM package
+        run: |
+          rpmbuild -ba pkg/ncalayer.spec
+          cp ~/rpmbuild/RPMS/x86_64/*.rpm .
+
+      - name: Upload RPM package
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-package
+          path: "*.rpm"
+
+  build-appimage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build AppImage
+        run: |
+          make appimage
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: "NCALayer-*.AppImage"
+
+  create-release:
+    needs: [build-arch, build-deb, build-rpm, build-appimage]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    timeout-minutes: 10
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: packages
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            packages/arch-package/*.pkg.tar.zst
+            packages/debian-package/*.deb
+            packages/rpm-package/*.rpm
+            packages/appimage/NCALayer-*.AppImage
+          draft: false
+          prerelease: false
+          body: |
+            ## NCALayer Linux Distribution Packages
+
+            ### Installation Instructions
+
+            **Arch Linux:**
+            ```bash
+            sudo pacman -U ncalayer-*.pkg.tar.zst
+            ncalayer-install-certs  # Install NCA certificates
+            ncalayer                # Start application
+            ```
+
+            **Debian/Ubuntu:**
+            ```bash
+            sudo dpkg -i ncalayer_*.deb
+            sudo apt-get install -f  # Install dependencies if needed
+            ncalayer-install-certs  # Install NCA certificates
+            ncalayer                # Start application
+            ```
+
+            **Fedora/RHEL/CentOS:**
+            ```bash
+            sudo dnf install ncalayer-*.rpm
+            ncalayer-install-certs  # Install NCA certificates
+            ncalayer                # Start application
+            ```
+
+            **AppImage (Universal):**
+            ```bash
+            chmod +x NCALayer-x86_64.AppImage
+            ./NCALayer-x86_64.AppImage --install-certs  # Install certificates
+            ./NCALayer-x86_64.AppImage                   # Run application
+            ```
+
+            ### Package Information
+
+            - **AppImage**: ~103MB (bundled JRE, fully portable, works on any Linux distro)
+            - **Distribution packages**: ~12MB (requires Java 8, managed by package manager)
+
+            ### Requirements
+
+            - **Distribution packages**: Java 8 JRE, certutil (nss-tools)
+            - **AppImage**: No dependencies, fully self-contained
+            - **Optional**: PC/SC libraries for smart card support
+
+            ### Post-Installation
+
+            After installation, run the certificate installer to add NCA certificates to your browsers:
+            - Distribution packages: `ncalayer-install-certs`
+            - AppImage: `./NCALayer-x86_64.AppImage --install-certs`
+
+            This will install certificates for Firefox, Chrome, Chromium, and other browsers using NSS certificate databases.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

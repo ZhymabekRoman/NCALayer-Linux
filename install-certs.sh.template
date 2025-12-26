@@ -1,0 +1,144 @@
+#!/bin/bash
+#
+# NCA Certificate Installation Script
+# Installs Kazakhstan PKI root certificates to browser certificate databases
+#
+# This script has embedded certificates and can run standalone
+#
+
+set -e
+
+# Embedded certificates (base64 encoded)
+# These will be replaced during build
+ROOT_CERT_BASE64="@@ROOT_CERT_BASE64@@"
+NCA_CERT_BASE64="@@NCA_CERT_BASE64@@"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "NCA Certificate Installation"
+echo "============================"
+echo ""
+
+# Create temporary directory for certificates
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+ROOT_CERT="$TEMP_DIR/root_rsa.cer"
+NCA_CERT="$TEMP_DIR/nca_rsa.cer"
+
+# Decode embedded certificates
+echo "Extracting embedded certificates..."
+echo "$ROOT_CERT_BASE64" | base64 -d > "$ROOT_CERT" || {
+    echo -e "${RED}Error: Failed to decode root certificate${NC}"
+    exit 1
+}
+
+echo "$NCA_CERT_BASE64" | base64 -d > "$NCA_CERT" || {
+    echo -e "${RED}Error: Failed to decode NCA certificate${NC}"
+    exit 1
+}
+
+# Verify certificates were extracted
+if [ ! -f "$ROOT_CERT" ] || [ ! -f "$NCA_CERT" ]; then
+    echo -e "${RED}Error: Failed to extract certificates${NC}"
+    exit 1
+fi
+
+# Check for certutil
+if ! command -v certutil >/dev/null 2>&1; then
+    echo -e "${RED}Error: certutil not found${NC}"
+    echo ""
+    echo "Please install nss-tools:"
+    echo "  Debian/Ubuntu: sudo apt install libnss3-tools"
+    echo "  Fedora/RHEL:   sudo dnf install nss-tools"
+    echo "  Arch Linux:    sudo pacman -S nss"
+    echo ""
+    exit 1
+fi
+
+echo "Installing NCA certificates to browser databases..."
+echo ""
+
+INSTALLED_COUNT=0
+DB_COUNT=0
+
+# Install to cert8.db (old NSS database format - Firefox/Chrome legacy)
+echo "Searching for cert8.db (legacy NSS databases)..."
+for certDB in $(find ~/ -name "cert8.db" 2>/dev/null); do
+    certdir=$(dirname "$certDB")
+    DB_COUNT=$((DB_COUNT + 1))
+    echo "  Found: $certdir"
+
+    # Install root certificate
+    if certutil -A -n "root_rsa.cer" -t "TCu,Cu," -i "$ROOT_CERT" -d "dbm:$certdir" 2>/dev/null; then
+        INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
+        echo -e "    ${GREEN}✓${NC} Installed root_rsa.cer"
+    else
+        echo -e "    ${YELLOW}⚠${NC} root_rsa.cer (may already exist)"
+    fi
+
+    # Install NCA certificate
+    if certutil -A -n "nca_rsa.cer" -t "TCu,Cu," -i "$NCA_CERT" -d "dbm:$certdir" 2>/dev/null; then
+        INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
+        echo -e "    ${GREEN}✓${NC} Installed nca_rsa.cer"
+    else
+        echo -e "    ${YELLOW}⚠${NC} nca_rsa.cer (may already exist)"
+    fi
+done
+
+echo ""
+
+# Install to cert9.db (new NSS database format - Firefox/Chrome modern)
+echo "Searching for cert9.db (modern NSS databases)..."
+for certDB in $(find ~/ -name "cert9.db" 2>/dev/null); do
+    certdir=$(dirname "$certDB")
+    DB_COUNT=$((DB_COUNT + 1))
+    echo "  Found: $certdir"
+
+    # Install root certificate
+    if certutil -A -n "root_rsa.cer" -t "TCu,Cu," -i "$ROOT_CERT" -d "sql:$certdir" 2>/dev/null; then
+        INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
+        echo -e "    ${GREEN}✓${NC} Installed root_rsa.cer"
+    else
+        echo -e "    ${YELLOW}⚠${NC} root_rsa.cer (may already exist)"
+    fi
+
+    # Install NCA certificate
+    if certutil -A -n "nca_rsa.cer" -t "TCu,Cu," -i "$NCA_CERT" -d "sql:$certdir" 2>/dev/null; then
+        INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
+        echo -e "    ${GREEN}✓${NC} Installed nca_rsa.cer"
+    else
+        echo -e "    ${YELLOW}⚠${NC} nca_rsa.cer (may already exist)"
+    fi
+done
+
+echo ""
+echo "============================"
+
+if [ $DB_COUNT -eq 0 ]; then
+    echo -e "${YELLOW}Warning: No certificate databases found${NC}"
+    echo ""
+    echo "Certificate databases are typically located in:"
+    echo "  - Firefox: ~/.mozilla/firefox/*.default*/"
+    echo "  - Chrome:  ~/.pki/nssdb/"
+    echo ""
+    echo "Make sure your browser is installed and has been run at least once."
+elif [ $INSTALLED_COUNT -eq 0 ]; then
+    echo -e "${YELLOW}No new certificates installed${NC}"
+    echo "Certificates may already be installed in all databases."
+else
+    echo -e "${GREEN}Successfully installed $INSTALLED_COUNT certificate(s) to $DB_COUNT database(s)${NC}"
+    echo ""
+    echo -e "${YELLOW}Important: Please restart your browser for changes to take effect${NC}"
+fi
+
+echo ""
+echo "To verify installation, run:"
+echo "  certutil -L -d sql:~/.mozilla/firefox/*.default*/"
+echo "  # or"
+echo "  certutil -L -d sql:~/.pki/nssdb/"
+echo ""

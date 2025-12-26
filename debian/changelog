@@ -1,0 +1,8 @@
+ncalayer (1.0.0-1) unstable; urgency=medium
+
+  * Initial release
+  * Digital signature application for Kazakhstan NCA PKI
+  * Includes certificate installer utility
+  * System Java 8 dependency (no bundled JRE)
+
+ -- ZhymabekRoman <robanokssamit@yandex.kz>  Thu, 26 Dec 2024 00:00:00 +0000

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# NCALayer AppImage Runner
+APPDIR="$(dirname "$(readlink -f "$0")")"
+JAVA_HOME="$APPDIR/usr/lib/jre8_ncalayer"
+JAVA="$JAVA_HOME/bin/java"
+
+# Handle special arguments
+case "$1" in
+    --install-certs)
+        echo "Running NCA Certificate Installer..."
+        echo ""
+        exec "$APPDIR/usr/bin/install-certs.sh"
+        ;;
+    --help)
+        echo "NCALayer - Digital Signature Application"
+        echo ""
+        echo "Usage: $0 [OPTIONS]"
+        echo ""
+        echo "Options:"
+        echo "  --install-certs      Install NCA certificates to browser databases"
+        echo "  --help               Show this help message"
+        echo ""
+        echo "AppImage options:"
+        echo "  --appimage-extract   Extract AppImage contents"
+        echo "  --appimage-help      Show AppImage built-in options"
+        echo ""
+        exit 0
+        ;;
+esac
+
+if [ ! -x "$JAVA" ]; then
+    echo "Error: Java runtime not found at $JAVA"
+    exit 1
+fi
+
+# Auto-detect PCSC library for smart card support
+JAVA_ARGS=""
+if command -v ldd >/dev/null 2>&1; then
+    PCSC_LIB=$(ldd /usr/bin/pcsc_scan 2>/dev/null | grep libpcsclite | grep -v "not found" | awk '{print $3}')
+    if [ -n "$PCSC_LIB" ] && [ -r "$PCSC_LIB" ]; then
+        JAVA_ARGS="-Dsun.security.smartcardio.library=$PCSC_LIB"
+    fi
+fi
+
+cd "$APPDIR"
+exec "$JAVA" $JAVA_ARGS -jar "$APPDIR/usr/lib/ncalayer.jar" "$@" 2>/dev/null &

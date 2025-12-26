@@ -1,0 +1,44 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Download and extract during build
+	$(MAKE) download
+	$(MAKE) verify
+	$(MAKE) extract
+	$(MAKE) extract-jar
+	$(MAKE) install-certs.sh
+
+override_dh_auto_test:
+	# No tests for this package
+	@echo "Skipping tests"
+
+override_dh_auto_install:
+	# Install JAR
+	install -Dm644 ncalayer.jar debian/ncalayer/usr/share/ncalayer/ncalayer.jar
+
+	# Install certificates
+	install -Dm644 additions/cert/root_rsa.cer debian/ncalayer/usr/share/ncalayer/cert/root_rsa.cer
+	install -Dm644 additions/cert/nca_rsa.cer debian/ncalayer/usr/share/ncalayer/cert/nca_rsa.cer
+
+	# Install certificate installer
+	install -Dm755 install-certs.sh debian/ncalayer/usr/bin/ncalayer-install-certs
+
+	# Install launcher
+	install -Dm755 pkg/launcher.sh debian/ncalayer/usr/bin/ncalayer
+
+	# Install desktop entry
+	sed 's/Exec=ncalayer/Exec=\/usr\/bin\/ncalayer/' ncalayer.desktop.template > ncalayer.desktop
+	install -Dm644 ncalayer.desktop debian/ncalayer/usr/share/applications/ncalayer.desktop
+
+	# Install icon
+	install -Dm644 additions/ncalayer.png debian/ncalayer/usr/share/icons/hicolor/256x256/apps/ncalayer.png
+
+	# Install documentation
+	install -Dm644 README.md debian/ncalayer/usr/share/doc/ncalayer/README.md
+
+override_dh_auto_clean:
+	$(MAKE) clean-all || true
+	dh_auto_clean
