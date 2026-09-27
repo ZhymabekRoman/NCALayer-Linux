@@ -1,6 +1,6 @@
 DOWNLOAD_URL = https://ncl.pki.gov.kz/images/NCALayer/ncalayer.zip
-MD5_SUM = fc44f518042ff8daf6087cd6dcc667cb
-SHA1_SUM = 0341e0e0a6a983bb46cca454f75356d85f451be9
+MD5_SUM = 1df6f893e34be3786992e02a275d2e5a
+SHA1_SUM = ee0219f72b26b23e25d9f26afc246ca14e16c394
 
 # Version management (from git tag or default)
 VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.0.0")

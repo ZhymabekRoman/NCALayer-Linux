@@ -1,3 +1,9 @@
+ncalayer (1.4.0-1) unstable; urgency=medium
+
+  * Update official ncalayer.zip checksums for NCALayer 1.4
+
+ -- rtabulov <rtabulov@users.noreply.github.com>  Tue, 08 Sep 2026 12:00:00 +0000
+
 ncalayer (1.0.0-1) unstable; urgency=medium
 
   * Initial release
