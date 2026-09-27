@@ -75,9 +75,12 @@ verify: ncalayer.zip
 	fi
 
 # Extract ncalayer.zip archive
+# Upstream ships jre8_ncalayer/ as 0700. Unreadable payloads survive FUSE
+# (no default_permissions) but break real mounts and the Fedora RPM.
 extract: ncalayer.zip
 	@echo "Extracting ncalayer.zip..."
 	@unzip -q -o ncalayer.zip
+	@chmod -R a+rX additions/jre8_ncalayer
 	@echo "Extraction complete."
 
 # Extract embedded JAR from ncalayer.sh
