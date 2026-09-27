@@ -13,6 +13,6 @@ pkgbase = ncalayer
 	depends = nss
 	optdepends = pcsclite: Smart card support
 	source = ncalayer-1.4.1.tar.gz::https://github.com/ZhymabekRoman/NCALayer-Linux/archive/v1.4.1.tar.gz
-	sha256sums = SKIP
+	sha256sums = f37c3e13f8c1aa4f62389ddcac7197398866a7d3cc9b3a5386d24bc641fc8d29
 
 pkgname = ncalayer

@@ -11,10 +11,7 @@ optdepends=('pcsclite: Smart card support')
 makedepends=('wget' 'unzip' 'make')
 install=ncalayer.install
 source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/v${pkgver}.tar.gz")
-# The archive for this tag does not exist until the tag is pushed, so the sum
-# cannot be known in advance. Fill in right after tagging with:
-#   curl -sL "${url}/archive/v${pkgver}.tar.gz" | sha256sum
-sha256sums=('SKIP')
+sha256sums=('f37c3e13f8c1aa4f62389ddcac7197398866a7d3cc9b3a5386d24bc641fc8d29')
 
 prepare() {
     cd "${srcdir}/NCALayer-Linux-${pkgver}"
