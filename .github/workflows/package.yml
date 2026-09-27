@@ -115,15 +115,22 @@ jobs:
           echo "Building version: $VERSION"
 
           PKGNAME=ncalayer
-          mkdir -p /tmp/${PKGNAME}-${VERSION}
-          cp -r . /tmp/${PKGNAME}-${VERSION}/
-          rm -rf /tmp/${PKGNAME}-${VERSION}/.git
-          tar czf ${PKGNAME}-${VERSION}.tar.gz -C /tmp ${PKGNAME}-${VERSION}
+          # The tarball's top-level directory must match what PKGBUILD's
+          # prepare() cds into: GitHub's archive layout for the tag.
+          SRCROOT=NCALayer-Linux-${VERSION}
+          mkdir -p /tmp/${SRCROOT}
+          cp -r . /tmp/${SRCROOT}/
+          rm -rf /tmp/${SRCROOT}/.git
+          tar czf ${PKGNAME}-${VERSION}.tar.gz -C /tmp ${SRCROOT}
           chown builder:builder ${PKGNAME}-${VERSION}.tar.gz
 
           # Update PKGBUILD version
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" pkg/PKGBUILD
           sed -i "s|source=(.*)|source=(\"${PKGNAME}-${VERSION}.tar.gz\")|" pkg/PKGBUILD
+          # The pinned checksum is for GitHub's tag archive; this tarball is
+          # built here and also contains the downloaded ncalayer.zip.
+          SRC_SHA256=$(sha256sum ${PKGNAME}-${VERSION}.tar.gz | cut -d' ' -f1)
+          sed -i "s/^sha256sums=.*/sha256sums=('${SRC_SHA256}')/" pkg/PKGBUILD
 
           # Copy PKGBUILD and .install file to root for makepkg
           cp pkg/PKGBUILD .
