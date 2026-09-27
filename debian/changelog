@@ -1,3 +1,12 @@
+ncalayer (1.4.1-1) unstable; urgency=medium
+
+  * Packaging-only fix release; no change to the contents of this package
+  * The official ncalayer.zip ships its bundled JRE directory as 0700, which
+    made the AppImage and the Fedora RPM unusable by non-root users
+  * Fix the build-arch CI job so tagged releases publish again
+
+ -- ZhymabekRoman <robanokssamit@yandex.kz>  Mon, 28 Sep 2026 04:47:45 +0500
+
 ncalayer (1.4.0-1) unstable; urgency=medium
 
   * Update official ncalayer.zip checksums for NCALayer 1.4
