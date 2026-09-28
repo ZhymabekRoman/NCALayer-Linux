@@ -11,7 +11,7 @@ optdepends=('pcsclite: Smart card support')
 makedepends=('wget' 'unzip' 'make')
 install=ncalayer.install
 source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/v${pkgver}.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('72efa555ea6021d1c05bafa6553bcddfc14b2890b2d1b52760ad8150fe6a4059')
 
 prepare() {
     cd "${srcdir}/NCALayer-Linux-${pkgver}"
