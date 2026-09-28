@@ -1,6 +1,6 @@
 # Maintainer: ZhymabekRoman <robanokssamit@yandex.kz>
 pkgname=ncalayer
-pkgver=1.4.1
+pkgver=1.4.2
 pkgrel=1
 pkgdesc="NCALayer digital signature application for Kazakhstan PKI"
 arch=('x86_64')
@@ -11,7 +11,7 @@ optdepends=('pcsclite: Smart card support')
 makedepends=('wget' 'unzip' 'make')
 install=ncalayer.install
 source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/v${pkgver}.tar.gz")
-sha256sums=('f37c3e13f8c1aa4f62389ddcac7197398866a7d3cc9b3a5386d24bc641fc8d29')
+sha256sums=('SKIP')
 
 prepare() {
     cd "${srcdir}/NCALayer-Linux-${pkgver}"

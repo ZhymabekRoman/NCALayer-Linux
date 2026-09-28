@@ -1,3 +1,13 @@
+ncalayer (1.4.2-1) unstable; urgency=medium
+
+  * Run the JVM in the foreground in all launchers instead of backgrounding
+    it with a swallowed stderr, so startup errors are visible and the launcher
+    process stays alive as the application's main process
+  * Remove the dead pkg/ncalayer.spec duplicate; the RHEL and Fedora specs are
+    the ones actually built by the Makefile and CI
+
+ -- ZhymabekRoman <robanokssamit@yandex.kz>  Mon, 28 Sep 2026 05:03:48 +0500
+
 ncalayer (1.4.1-1) unstable; urgency=medium
 
   * Packaging-only fix release; no change to the contents of this package
