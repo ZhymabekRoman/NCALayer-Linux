@@ -36,9 +36,11 @@ dpkg-buildpackage -us -uc -b
 
 **Fedora/RHEL/CentOS:**
 ```bash
-make pkg-rpm
+make pkg-rpm          # RHEL/CentOS (системная Java / system Java)
+make pkg-rpm-fedora   # Fedora (встроенная JRE / bundled JRE)
 # или / or
-rpmbuild -ba pkg/ncalayer.spec
+rpmbuild -ba pkg/ncalayer-rhel.spec
+rpmbuild -ba pkg/ncalayer-fedora.spec
 ```
 
 ## Требования для сборки / Build Requirements
@@ -83,8 +85,11 @@ NCALayer-Linux/
 │   └── postinst                  # Пост-установочный скрипт
 ├── pkg/                          # Пакеты для других дистрибутивов
 │   ├── PKGBUILD                  # Arch Linux
-│   ├── ncalayer.spec             # Fedora/RHEL/CentOS
-│   └── launcher.sh               # Универсальный скрипт запуска
+│   ├── ncalayer.install          # Arch install-скрипт / Arch install script
+│   ├── ncalayer-rhel.spec        # RHEL/CentOS (системная Java / system Java)
+│   ├── ncalayer-fedora.spec      # Fedora (встроенная JRE / bundled JRE)
+│   ├── launcher.sh               # Запуск с системной Java / system-Java launcher
+│   └── launcher-rpm.sh           # Запуск со встроенной JRE / bundled-JRE launcher
 ├── AppRun.template               # Шаблон запуска AppImage
 ├── ncalayer.desktop.template     # Шаблон desktop-файла
 └── install-certs.sh.template     # Шаблон установщика сертификатов
@@ -308,7 +313,7 @@ docker run -it --rm -v $(pwd):/build fedora:latest bash
 cd /build
 dnf install -y rpm-build rpmdevtools make wget unzip java-1.8.0-openjdk
 rpmdev-setuptree
-rpmbuild -ba pkg/ncalayer.spec
+rpmbuild -ba pkg/ncalayer-fedora.spec
 ```
 
 ## Публикация в AUR / Publishing to AUR
