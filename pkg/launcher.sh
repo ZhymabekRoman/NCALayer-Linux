@@ -40,5 +40,5 @@ elif [ -f /usr/lib64/libpcsclite.so.1 ]; then
     JAVA_ARGS="$JAVA_ARGS -Dsun.security.smartcardio.library=/usr/lib64/libpcsclite.so.1"
 fi
 
-# Run NCALayer
-exec $JAVA $JAVA_ARGS -jar /usr/share/ncalayer/ncalayer.jar "$@" 2>/dev/null &
+# Run NCALayer in the foreground so JVM startup errors are visible to the user
+exec "$JAVA" $JAVA_ARGS -jar /usr/share/ncalayer/ncalayer.jar "$@"

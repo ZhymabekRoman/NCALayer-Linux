@@ -44,4 +44,6 @@ if command -v ldd >/dev/null 2>&1; then
 fi
 
 cd "$APPDIR"
-exec "$JAVA" $JAVA_ARGS -jar "$APPDIR/usr/lib/ncalayer.jar" "$@" 2>/dev/null &
+# Run in the foreground so the JVM stays as the AppImage's main process and any
+# startup error is visible; backgrounding here would exit AppRun immediately.
+exec "$JAVA" $JAVA_ARGS -jar "$APPDIR/usr/lib/ncalayer.jar" "$@"
