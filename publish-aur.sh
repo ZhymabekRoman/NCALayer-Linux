@@ -19,8 +19,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Check if SSH key is set up for AUR
+# -n keeps ssh from consuming piped stdin (e.g. the "yes" confirmation below)
 echo "Checking AUR SSH access..."
-if ! ssh -T aur@aur.archlinux.org 2>&1 | grep -q "Welcome to AUR"; then
+if ! ssh -n -T aur@aur.archlinux.org 2>&1 | grep -q "Welcome to AUR"; then
     echo -e "${RED}ERROR: Cannot authenticate with AUR via SSH${NC}"
     echo ""
     echo "Please add your SSH public key to AUR:"
